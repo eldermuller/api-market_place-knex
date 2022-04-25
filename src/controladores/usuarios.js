@@ -53,61 +53,41 @@ const obterPerfil = async (req, res) => {
 }
 
 const atualizarPerfil = async (req, res) => {
-    const { nome, email, senha, nome_loja } = req.body;
+    let { nome, email, senha, nome_loja } = req.body;
+    const { id, email: emailTokenUser } = req.usuario;
 
     if (!nome && !email && !senha && !nome_loja) {
         return res.status(404).json('É obrigatório informar ao menos um campo para atualização');
     }
 
     try {
-        // update usuarios set nome = $1, email = $2...
-        const body = {};
-        const params = [];
-        let n = 1;
+        const usuarioExistente = await knex('usuarios').where({ id }).first();
 
-        if (nome) {
-            body.nome = nome;
-            params.push(`nome = $${n}`);
-            n++;
-        }
-
-        if (email) {
-            if (email !== req.usuario.email) {
-
-                const quantidadeUsuarios = await knex(usuarios).where({ email });
-
-                if (quantidadeUsuarios > 0) {
-                    return res.status(400).json("O email já existe");
-                }
-            }
-
-            body.email = email;
-            params.push(`email = $${n}`);
-            n++;
-        }
+        if (!usuarioExistente) {
+            return res.status(404).json("O usuario não encontrado");
+        };
 
         if (senha) {
-            body.senha = await bcrypt.hash(senha, 10);
-            params.push(`senha = $${n}`);
-            n++;
+            senha = await bcrypt.hash(senha, 10);
+        };
+
+        if (email !== emailTokenUser) {
+            const emailExistente = await knex('usuarios').where({ email }).first();
+
+            if (emailExistente) {
+                return res.status(400).json("Esse email já está cadastrado");
+            }
         }
 
-        if (nome_loja) {
-            body.nome_loja = nome_loja;
-            params.push(`nome_loja = $${n}`);
-            n++;
-        }
+        const atualizarUsuario = await knex('usuarios')
+            .where({ id })
+            .update({ nome, email, senha, nome_loja });
 
-        const valores = Object.values(body);
-        valores.push(req.usuario.id);
-        const query = `update usuarios set ${params.join(', ')} where id = $${n}`;
-        const usuarioAtualizado = await conexao.query(query, valores);
+        if (!atualizarUsuario) {
+            return res.status(400).json('Usuário não foi atualizado');
+        };
 
-        if (usuarioAtualizado.rowCount === 0) {
-            return res.status(400).json("O usuario não foi atualizado");
-        }
-
-        return res.status(200).json('Usuario foi atualizado com sucesso.');
+        return res.status(200).json(atualizarUsuario);
     } catch (error) {
         return res.status(400).json(error.message);
     }
