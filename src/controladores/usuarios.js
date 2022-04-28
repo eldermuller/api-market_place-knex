@@ -24,8 +24,6 @@ const cadastrarUsuario = async (req, res) => {
     try {
         const quantidadeDeUsuarios = await knex('usuarios').where({ email }).first();
 
-        console.log(quantidadeDeUsuarios);
-
         if (quantidadeDeUsuarios) {
             return res.status(400).json("O email já existe");
         }
