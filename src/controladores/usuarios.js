@@ -1,27 +1,14 @@
 const knex = require('../conexao');
 const bcrypt = require('bcrypt');
+const schemaCadastroUsuario = require('../validacoes/schemaCadastroUsuario');
 
 
 const cadastrarUsuario = async (req, res) => {
     const { nome, email, senha, nome_loja } = req.body;
 
-    if (!nome) {
-        return res.status(404).json("O campo nome é obrigatório");
-    }
-
-    if (!email) {
-        return res.status(404).json("O campo email é obrigatório");
-    }
-
-    if (!senha) {
-        return res.status(404).json("O campo senha é obrigatório");
-    }
-
-    if (!nome_loja) {
-        return res.status(404).json("O campo nome_loja é obrigatório");
-    }
-
     try {
+        await schemaCadastroUsuario.validate(req.body);
+
         const quantidadeDeUsuarios = await knex('usuarios').where({ email }).first();
 
         if (quantidadeDeUsuarios) {
