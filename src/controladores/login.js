@@ -2,15 +2,14 @@ const knex = require('../conexao');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const senhaHash = require('../senhaHash');
+const schemaLogin = require('../validacoes/schemaLogin');
 
 const login = async (req, res) => {
     const { email, senha } = req.body;
 
-    if (!email || !senha) {
-        return res.status(404).json('É obrigatório email e senha');
-    }
-
     try {
+        await schemaLogin.validate(req.body);
+
         const usuario = await knex('usuarios').where({ email }).first();
 
         console.log(usuario);

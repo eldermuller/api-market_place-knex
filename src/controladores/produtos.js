@@ -1,4 +1,5 @@
 const knex = require('../conexao');
+const schemaCadastroProduto = require('../validacoes/schemaCadastroProduto');
 
 const listarProdutos = async (req, res) => {
     const { id } = req.usuario;
@@ -37,23 +38,9 @@ const cadastrarProduto = async (req, res) => {
     const { usuario } = req;
     const { nome, estoque, preco, categoria, descricao, imagem } = req.body;
 
-    if (!nome) {
-        return res.status(404).json('O campo nome é obrigatório');
-    }
-
-    if (!estoque) {
-        return res.status(404).json('O campo estoque é obrigatório');
-    }
-
-    if (!preco) {
-        return res.status(404).json('O campo preco é obrigatório');
-    }
-
-    if (!descricao) {
-        return res.status(404).json('O campo descricao é obrigatório');
-    }
-
     try {
+        await schemaCadastroProduto.validate(req.body);
+
         const produto = await knex('produtos')
             .insert({ usuario_id: usuario.id, nome, estoque, preco, categoria, descricao, imagem })
             .returning('*');
